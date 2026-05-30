@@ -13,8 +13,8 @@ session list   →   session detail (turn tree)   →   prune snapshot
 ## Install
 
 ```bash
-git clone <this-repo> ~/SAPDevelop/github.com/personal/pi-session-viewer
-cd ~/SAPDevelop/github.com/personal/pi-session-viewer
+git clone https://github.com/anjanpoonacha/pi-session-viewer.git ~/pi-session-viewer
+cd ~/pi-session-viewer
 bun install                  # one-time, installs hono
 bun run install:ext          # register the /sessions slash command in pi
 ```
