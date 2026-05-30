@@ -1,0 +1,25 @@
+{
+  "name": "pi-session-viewer",
+  "version": "0.1.0",
+  "description": "Local-only browser viewer for pi coding-agent sessions: forest, filters, GitHub-style diffs, image rendering, surgical content prune.",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "main": "src/server.tsx",
+  "bin": {
+    "pi-sessions": "./bin/pi-sessions"
+  },
+  "scripts": {
+    "start": "bun run src/cli.ts",
+    "dev": "bun run --watch src/cli.ts",
+    "test": "bun test",
+    "install:ext": "bun run bin/install",
+    "uninstall:ext": "bun run bin/uninstall"
+  },
+  "dependencies": {
+    "hono": "^4.12.0"
+  },
+  "engines": {
+    "bun": ">=1.2.0"
+  }
+}

@@ -1,0 +1,9 @@
+#!/usr/bin/env bun
+// bin/pi-sessions — entry shim. Resolves the package and runs the CLI.
+
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const cli = resolve(HERE, "..", "src", "cli.ts");
+await import(cli);

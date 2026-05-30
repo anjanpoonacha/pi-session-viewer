@@ -1,0 +1,37 @@
+#!/usr/bin/env bun
+// bin/uninstall — remove the pi-sessions entry from pi's settings.json (idempotent).
+
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { resolve } from "node:path";
+
+const EXT_PATH = resolve(import.meta.dir, "..", "extension", "pi-sessions.ts");
+
+const CANDIDATES = [
+  `${homedir()}/.pi/agent/settings.json`,
+  `${homedir()}/.config/pi/settings.json`,
+];
+const settingsPath = CANDIDATES.find(existsSync);
+
+if (!settingsPath) {
+  console.log("✓ no settings.json found — nothing to uninstall");
+  process.exit(0);
+}
+
+let cfg: any;
+try {
+  cfg = JSON.parse(readFileSync(settingsPath, "utf8"));
+} catch (err) {
+  console.error(`✗ failed to parse ${settingsPath}: ${(err as Error).message}`);
+  process.exit(1);
+}
+
+if (!Array.isArray(cfg.extensions) || !cfg.extensions.includes(EXT_PATH)) {
+  console.log(`✓ already absent from ${settingsPath}`);
+  process.exit(0);
+}
+
+cfg.extensions = cfg.extensions.filter((e: string) => e !== EXT_PATH);
+if (!cfg.extensions.length) delete cfg.extensions;
+writeFileSync(settingsPath, JSON.stringify(cfg, null, 2) + "\n", "utf8");
+console.log(`✓ removed pi-sessions extension from ${settingsPath}`);

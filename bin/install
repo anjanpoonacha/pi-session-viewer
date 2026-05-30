@@ -1,0 +1,45 @@
+#!/usr/bin/env bun
+// bin/install — register the pi-sessions extension in pi's settings.json (idempotent).
+//
+// Adds an absolute path to the "extensions" array so pi auto-loads it.
+// Run with `bun run bin/install` or `./bin/install` from the repo root.
+
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { dirname, resolve } from "node:path";
+
+const EXT_PATH = resolve(import.meta.dir, "..", "extension", "pi-sessions.ts");
+
+// Pi reads ~/.pi/agent/settings.json by default; some profiles use ~/.config/pi/settings.json.
+// Pick whichever one exists; if neither, default to ~/.pi/agent/settings.json.
+const CANDIDATES = [
+  `${homedir()}/.pi/agent/settings.json`,
+  `${homedir()}/.config/pi/settings.json`,
+];
+const settingsPath = CANDIDATES.find(existsSync) ?? CANDIDATES[0];
+
+let cfg: any = {};
+if (existsSync(settingsPath)) {
+  try {
+    cfg = JSON.parse(readFileSync(settingsPath, "utf8")) ?? {};
+  } catch (err) {
+    console.error(`✗ failed to parse ${settingsPath}: ${(err as Error).message}`);
+    process.exit(1);
+  }
+}
+
+if (!Array.isArray(cfg.extensions)) cfg.extensions = [];
+
+if (cfg.extensions.includes(EXT_PATH)) {
+  console.log(`✓ already registered in ${settingsPath}`);
+  console.log(`  → ${EXT_PATH}`);
+  process.exit(0);
+}
+
+cfg.extensions.push(EXT_PATH);
+mkdirSync(dirname(settingsPath), { recursive: true });
+writeFileSync(settingsPath, JSON.stringify(cfg, null, 2) + "\n", "utf8");
+console.log(`✓ registered pi-sessions extension`);
+console.log(`  config:    ${settingsPath}`);
+console.log(`  extension: ${EXT_PATH}`);
+console.log(`\nNext: in any pi session, type /sessions`);
