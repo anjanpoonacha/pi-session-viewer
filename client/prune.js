@@ -83,6 +83,11 @@
           const item = cb.closest('.prune-item');
           if (item && item.dataset.kind === 'toolCallArg') cb.checked = true;
         }
+      } else if (action === 'all-elided') {
+        for (const cb of cbs()) {
+          const item = cb.closest('.prune-item');
+          if (item && item.dataset.kind === 'elidedPlaceholder') cb.checked = true;
+        }
       }
       refresh();
     });

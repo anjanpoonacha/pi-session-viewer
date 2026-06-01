@@ -5,6 +5,7 @@ import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { createInterface } from "node:readline";
 import type { Entry, ParseResult, SessionHeader, Summary } from "../types.ts";
+import { PLACEHOLDER_PATTERN } from "../engine/prune.ts";
 
 /** Read just the first line for a cheap header-only fetch. */
 export async function readHeader(path: string): Promise<SessionHeader | null> {
@@ -99,12 +100,17 @@ export function summarize(path: string, parsed: ParseResult): Summary {
         for (const c of msg.content) {
           if (c?.type === "image") hasImages = true;
           if (c?.type === "toolCall" && typeof c.name === "string") toolNames.add(c.name);
-          // Poisoned-snapshot detection: a toolCall whose arg string contains
-          // "[elided " or "[elided:" was produced by the pre-fix pruner. The
-          // shape causes contamination on resume — warn the user not to use it.
+          // Poisoned-snapshot detection: any text or toolCall arg containing a
+          // v1/v2 prune placeholder ([elided ...], [<verb> call elided ...],
+          // [<tool> result elided ...], [tool result . ...], [image . ...]).
+          // These shapes cause contamination on resume; the splice pruner (v3)
+          // produces files that contain none of them.
+          if (c?.type === "text" && typeof c.text === "string") {
+            if (PLACEHOLDER_PATTERN.test(c.text)) isPoisoned = true;
+          }
           if (c?.type === "toolCall" && c.arguments && typeof c.arguments === "object") {
             for (const v of Object.values(c.arguments)) {
-              if (typeof v === "string" && /\[elided[ :]/.test(v)) {
+              if (typeof v === "string" && PLACEHOLDER_PATTERN.test(v)) {
                 isPoisoned = true;
               }
             }

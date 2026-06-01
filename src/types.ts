@@ -132,7 +132,25 @@ export type BranchInfo = {
 export type PruneCandidate = {
   id: string; // <entryId>:<kind>:<contentIndex>[:<argKey>]
   entryId: string;
-  kind: "image" | "thinking" | "toolResultText" | "toolCallArg";
+  /**
+   * - image / thinking: drop just the content block.
+   * - toolCallArg: drop the entire toolCall block AND its paired toolResult
+   *   entry (the JSONL stays Anthropic tool_use ↔ tool_result symmetric).
+   * - toolResultText: same — selecting any toolResult text block drops the
+   *   whole call/result pair. Head/tail truncation is no longer offered:
+   *   any text we keep would itself be authored placeholder content.
+   * - elidedPlaceholder: legacy. Pre-splice pruners injected synthetic strings
+   *   like `[write call elided · /path · 4.4 KB pruned]` into text blocks.
+   *   Selecting one of these drops the offending text block (and full pair if
+   *   it sits on a toolResult), so old snapshots can be cleaned in the same
+   *   UI without manual JSONL surgery.
+   */
+  kind:
+    | "image"
+    | "thinking"
+    | "toolResultText"
+    | "toolCallArg"
+    | "elidedPlaceholder";
   contentIndex: number;
   argKey?: string;
   bytes: number;
@@ -151,6 +169,7 @@ export type PruneInventory = {
     thinking: { count: number; bytes: number };
     toolResultText: { count: number; bytes: number };
     toolCallArg: { count: number; bytes: number };
+    elidedPlaceholder: { count: number; bytes: number };
   };
 };
 
@@ -159,6 +178,12 @@ export type PruneApplyReport = {
   bytesBefore: number;
   bytesAfter: number;
   perKind: Record<string, { count: number; bytes: number }>;
+  /** Number of toolCall ↔ toolResult pairs spliced (full removal, no placeholder). */
+  splicedToolPairs: number;
+  /** Number of full entries removed (assistant entries emptied by splice, toolResult pairs, dangling cross-refs). */
+  splicedEntries: number;
+  /** Tool calls whose pair was spliced — kept for the audit log only. No payload, no replacement text. */
+  splicedPairs: { toolCallId: string; toolName?: string }[];
 };
 
 // --- forest (subagent tree) ---

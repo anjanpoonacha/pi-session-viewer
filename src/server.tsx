@@ -232,7 +232,7 @@ export function buildApp(opts: { sessionsDir: string }) {
       return c.json({ ok: false, error: "selected ids didn't match any current candidates" }, 400);
     }
 
-    const { newEntries, report, droppedToolCalls } = applyPrune(visibleEntries, inventory, selected);
+    const { newEntries, report } = applyPrune(visibleEntries, inventory, selected);
     const outPath = writeSnapshot(path, parsed.header, newEntries);
 
     const auditPath = writeAuditLog({
@@ -244,7 +244,6 @@ export function buildApp(opts: { sessionsDir: string }) {
       sourceLikelyActive,
       sourceAgeSec,
       report,
-      droppedToolCalls,
     });
 
     void store.refresh(); // surface the new file in the list

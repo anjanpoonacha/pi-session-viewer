@@ -16,6 +16,7 @@ export const PrunePage = ({
     thinking: [],
     toolResultText: [],
     toolCallArg: [],
+    elidedPlaceholder: [],
   };
   for (const c of inventory.candidates) byKind[c.kind].push(c);
 
@@ -24,7 +25,8 @@ export const PrunePage = ({
     inventory.totals.image.bytes +
     inventory.totals.thinking.bytes +
     inventory.totals.toolResultText.bytes +
-    inventory.totals.toolCallArg.bytes;
+    inventory.totals.toolCallArg.bytes +
+    inventory.totals.elidedPlaceholder.bytes;
 
   return (
     <div class="prune-page">
@@ -40,8 +42,8 @@ export const PrunePage = ({
         <div class="prune-explain">
           The original file <code>{basenamePath(summary.path)}</code> will <strong>not</strong> be modified.
           A new file <code>{basenamePath(summary.path).replace(/\.jsonl$/, "")}.pruned-{"<timestamp>"}.jsonl</code>
-          {" "}will be written next to it with selected items replaced by short text placeholders.
-          Open the new file with <code>pi --session &lt;new-path&gt;</code>.
+          {" "}will be written next to it with the selected items <strong>removed entirely</strong> (no placeholder text).
+          parentId is mended automatically so pi can <code>--session</code> the new file directly.
         </div>
       </div>
 
@@ -51,6 +53,7 @@ export const PrunePage = ({
             Select items to drop. {totalCount} candidates · {fmtBytes(totalBytes)} reclaimable.
           </span>
           <span class="prune-quick">
+            <button type="button" class="quick-btn quick-clean" data-quick="all-elided">clean legacy placeholders</button>
             <button type="button" class="quick-btn" data-quick="all-images">select all images</button>
             <button type="button" class="quick-btn" data-quick="last-5-images">keep last 5 images, drop rest</button>
             <button type="button" class="quick-btn" data-quick="all-bash">all bash &gt; 8 KB</button>
@@ -59,6 +62,15 @@ export const PrunePage = ({
             <button type="button" class="quick-btn quick-clear" data-quick="clear">clear</button>
           </span>
         </div>
+
+        {byKind.elidedPlaceholder.length ? (
+          <PruneSection
+            title={`⚠ Legacy elided placeholders (${inventory.totals.elidedPlaceholder.count})`}
+            subtitle={`${fmtBytes(inventory.totals.elidedPlaceholder.bytes)} total · left over from old pruners; selecting drops the offending text or its tool pair`}
+            kind="elidedPlaceholder"
+            candidates={byKind.elidedPlaceholder}
+          />
+        ) : null}
 
         {byKind.image.length ? (
           <PruneSection
@@ -71,7 +83,7 @@ export const PrunePage = ({
 
         {byKind.toolResultText.length ? (
           <PruneSection
-            title={`📜 Tool results > 4 KB (${inventory.totals.toolResultText.count})`}
+            title={`📜 Tool results > 4 KB (${inventory.totals.toolResultText.count}) — entire pair dropped`}
             subtitle={`${fmtBytes(inventory.totals.toolResultText.bytes)} total`}
             kind="toolResultText"
             candidates={byKind.toolResultText}
@@ -80,7 +92,7 @@ export const PrunePage = ({
 
         {byKind.toolCallArg.length ? (
           <PruneSection
-            title={`📥 Tool calls with large args > 4 KB (${inventory.totals.toolCallArg.count}) — entire call dropped`}
+            title={`📥 Tool calls with large args > 4 KB (${inventory.totals.toolCallArg.count}) — entire pair dropped`}
             subtitle={`${fmtBytes(inventory.totals.toolCallArg.bytes)} total`}
             kind="toolCallArg"
             candidates={byKind.toolCallArg}
